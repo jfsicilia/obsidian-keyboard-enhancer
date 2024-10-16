@@ -34,6 +34,32 @@ export default class KeyboardEnhancerPlugin extends Plugin {
 		return false;
 	}
 
+	focusViewByType(viewType: string) {
+		const view = this.app.workspace.getLeavesOfType(viewType)[0];
+		if (!view) return;
+
+		if (this.inSplit(view, this.app.workspace.rightSplit))
+			this.app.workspace.rightSplit.expand();
+		else if (this.inSplit(view, this.app.workspace.leftSplit))
+			this.app.workspace.leftSplit.expand();
+		this.app.workspace.setActiveLeaf(view, { focus: true });
+	}
+	// "file-properties", "outline", "localgraph", "all-properties", "tag", "backlink",
+	// "recent-files", "bookmarks", "search"
+
+	vimiumCompatibleView: string[] = [
+		"external-links-view",
+		"file-properties",
+		"localgraph",
+		"tag",
+		"all-properties",
+		"outgoing-link",
+		"recent-files",
+		"bookmarks",
+		"outline",
+		"backlink",
+	];
+
 	async onload() {
 		await this.loadSettings();
 
@@ -51,19 +77,16 @@ export default class KeyboardEnhancerPlugin extends Plugin {
 		});
 		this.addCommand({
 			id: "focus-local-graph",
-			name: "Focus Local Graph View",
+			name: "Focus local graph view",
 			callback: async () => {
-				const graphView =
-					this.app.workspace.getLeavesOfType("localgraph")[0];
-				if (!graphView) return;
-
-				if (this.inSplit(graphView, this.app.workspace.rightSplit))
-					this.app.workspace.rightSplit.expand();
-				if (this.inSplit(graphView, this.app.workspace.leftSplit))
-					this.app.workspace.leftSplit.expand();
-				this.app.workspace.setActiveLeaf(graphView, {
-					focus: true,
-				});
+				this.focusViewByType("localgraph");
+			},
+		});
+		this.addCommand({
+			id: "focus-external-links",
+			name: "Focus external links view",
+			callback: async () => {
+				this.focusViewByType("external-links-view");
 			},
 		});
 
@@ -75,10 +98,18 @@ export default class KeyboardEnhancerPlugin extends Plugin {
 					);
 			}
 			if (event.key === "f") {
-				if (this.isMarkdownEditorActiveAndInPreviewMode())
+				const viewType =
+					this.app.workspace
+						.getActiveViewOfType(View)
+						?.getViewType() ?? "";
+				if (
+					this.isMarkdownEditorActiveAndInPreviewMode() ||
+					this.vimiumCompatibleView.includes(viewType)
+				) {
 					await this.app.commands.executeCommandById(
 						"vimium:show-markers"
 					);
+				}
 			}
 		});
 	}
