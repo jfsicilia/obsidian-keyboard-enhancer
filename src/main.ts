@@ -18,27 +18,6 @@ const DEFAULT_SETTINGS: KeyboardEnhancerSettings = {
 	enableEnhancer: true,
 };
 
-// "file-properties", "outline", "localgraph", "all-properties", "tag", "backlink",
-// "recent-files", "bookmarks", "search"
-// const VIMIUM_COMPATIBLE_VIEW: string[] = [
-// 	"external-links-view",
-// 	"file-explorer",
-// 	"file-properties",
-// 	"localgraph",
-// 	"tag",
-// 	"all-properties",
-// 	"outline",
-// 	"outgoing-link",
-// 	"recent-files",
-// 	"bookmarks",
-// 	"backlink",
-// ];
-
-// const VIMIUM_NOT_AVAILABLE_CLASSNAMES: string[] = [
-// 	"cm-content",
-// 	"inline-title",
-// ];
-
 export default class KeyboardEnhancerPlugin extends Plugin {
 	settings: KeyboardEnhancerSettings;
 
@@ -47,24 +26,21 @@ export default class KeyboardEnhancerPlugin extends Plugin {
 		return view?.getViewType() === "file-explorer";
 	}
 
-	isMarkdownEditorActiveAndInPreviewMode(): boolean {
-		const view = this.app.workspace.getActiveViewOfType(View);
-		return (
-			view?.getViewType() === "markdown" &&
-			view?.currentMode.type === "preview"
-		);
-	}
-
+	/**
+	 * Check if an element `e` is a child of another of a `split`.
+	 */
 	inSplit(e: WorkspaceItem, split: WorkspaceItem): boolean {
 		while (e) {
-			console.log(e);
-			console.log(split);
 			if (e === split) return true;
 			e = e.parent;
 		}
 		return false;
 	}
 
+	/**
+	 * Focuses a view by its type. If the view is in the right or left split,
+	 * it expands the split to show the view.
+	 */
 	focusViewByType(viewType: string) {
 		const view = this.app.workspace.getLeavesOfType(viewType)[0];
 		if (!view) return;
@@ -76,11 +52,31 @@ export default class KeyboardEnhancerPlugin extends Plugin {
 		this.app.workspace.setActiveLeaf(view, { focus: true });
 	}
 
+	/**
+	 * Focuses the note in the root split. If the split is divided into more
+	 * splits, if finds the first split that is a tab and focuses the current
+	 * tab.
+	 */
+	focusNote() {
+		let root = this.app.workspace.rootSplit;
+		while (root.type !== "tabs") root = root.children[0];
+		this.app.workspace.setActiveLeaf(root.children[root.currentTab], {
+			focus: true,
+		});
+	}
+
+	/**
+	 * Show vimium markers.
+	 */
 	async showVimiumMarkers() {
 		await this.app.commands.executeCommandById("vimium:show-markers");
 	}
 
+	/**
+	 * Hide vimium markers.
+	 */
 	hideVimiumMarkers() {
+		// Hack to simulate pressing the 'Escape' key, to hide vimium markers
 		const escEvent = new KeyboardEvent("keydown", {
 			key: "Escape",
 			code: "Escape",
@@ -88,28 +84,20 @@ export default class KeyboardEnhancerPlugin extends Plugin {
 			bubbles: true,
 			cancelable: true,
 		});
-
-		// Dispatch the 'Escape' event on the document
 		document.dispatchEvent(escEvent);
 	}
 
 	async onload() {
 		const app = this.app;
-		const workspace = app.workspace;
 
 		await this.loadSettings();
-		this.addSettingTab(new KeyboardEnhancerSettingTab(this.app, this));
+		this.addSettingTab(new KeyboardEnhancerSettingTab(app, this));
 
 		this.addCommand({
 			id: "focus-note",
 			name: "Focus note",
 			callback: async () => {
-				let root = this.app.workspace.rootSplit;
-				while (root.type !== "tabs") root = root.children[0];
-				this.app.workspace.setActiveLeaf(
-					root.children[root.currentTab],
-					{ focus: true }
-				);
+				this.focusNote();
 			},
 		});
 		this.addCommand({
@@ -159,32 +147,6 @@ export default class KeyboardEnhancerPlugin extends Plugin {
 				!document.querySelector(".vimium-container")
 					? await this.showVimiumMarkers()
 					: this.hideVimiumMarkers();
-
-				// if (
-				// 	VIMIUM_NOT_AVAILABLE_CLASSNAMES.some((classname) =>
-				// 		active?.classList.contains(classname)
-				// 	)
-				// )
-				// return;
-
-				// if (!document.querySelector(".vimium-container"))
-				// 	await this.showVimiumMarkers();
-				// else if (!document.querySelector(".vimium-marker-char-match"))
-				// 	this.hideVimiumMarkers();
-
-				// const viewType =
-				// 	workspace.getActiveViewOfType(View)?.getViewType() ?? "";
-				// if (
-				// 	this.isMarkdownEditorActiveAndInPreviewMode() ||
-				// 	VIMIUM_COMPATIBLE_VIEW.includes(viewType)
-				// ) {
-				// 	if (!document.querySelector(".vimium-container"))
-				// 		await this.showVimiumMarkers();
-				// 	else if (
-				// 		!document.querySelector(".vimium-marker-char-match")
-				// 	)
-				// 		this.hideVimiumMarkers();
-				// }
 			}
 		});
 	}
