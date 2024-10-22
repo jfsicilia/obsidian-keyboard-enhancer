@@ -132,22 +132,34 @@ export default class KeyboardEnhancerPlugin extends Plugin {
 			// Do nothing if keyboard enhancer is disabled
 			if (!this.settings.enableEnhancer) return;
 
-			if (event.key === " ") {
-				if (this.isFileExplorerActive())
-					await app.commands.executeCommandById(
-						"file-manager:toggle-select"
-					);
-			}
-			if (event.key === ";") {
-				const focusedElem = document.activeElement;
-				// Do nothing if focused element is an input or contenteditable
-				if (focusedElem?.tagName.toLowerCase() === "input") return;
-				if (focusedElem?.contentEditable === "true") return;
-				// Activate vimium if not showing markers, deactivate if showing
-				!document.querySelector(".vimium-container")
-					? await this.showVimiumMarkers()
-					: this.hideVimiumMarkers();
-			}
+            switch (event.key) {
+                case " ":   // Toggle selection in file explorer.
+                    if (!this.isFileExplorerActive()) return;
+                    await app.commands.executeCommandById(
+                        "file-manager:toggle-select"
+                    );
+                    break;
+                case ";":   // Toggle vimium markers.
+                    const focusedElem = document.activeElement;
+                    // Do nothing if focused element is an input or contenteditable
+                    if (focusedElem?.tagName.toLowerCase() === "input") return;
+                    if (focusedElem?.contentEditable === "true") return;
+                    // Activate vimium if not showing markers, deactivate if showing
+                    !document.querySelector(".vimium-container")
+                        ? await this.showVimiumMarkers()
+                        : this.hideVimiumMarkers();
+                    break;
+                case "Enter":   // Create/Open folder note of active file explorer folder.
+                    if (!this.isFileExplorerActive()) return;
+                    if (event.ctrlKey)
+                        await app.commands.executeCommandById(
+                            "folder-notes:create-markdown-folder-note-for-active-file-explorer-folder"
+                        );
+                    await app.commands.executeCommandById(
+                        "folder-notes:open-folder-note-of-active-file-explorer-folder"
+                    );
+                    break;
+            }
 		});
 	}
 
