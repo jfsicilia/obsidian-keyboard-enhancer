@@ -151,6 +151,7 @@ export default class KeyboardEnhancerPlugin extends Plugin {
                     break;
                 case "Enter":   // Create/Open folder note of active file explorer folder.
                     if (!this.isFileExplorerActive()) return;
+                    // If ctrl key is pressed, create a new folder note.
                     if (event.ctrlKey)
                         await app.commands.executeCommandById(
                             "folder-notes:create-markdown-folder-note-for-active-file-explorer-folder"
