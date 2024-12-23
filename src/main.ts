@@ -101,6 +101,13 @@ export default class KeyboardEnhancerPlugin extends Plugin {
 			},
 		});
 		this.addCommand({
+			id: "focus-calendar",
+			name: "Focus calendar view",
+			callback: async () => {
+				this.focusViewByType("calendar");
+			},
+		});
+		this.addCommand({
 			id: "focus-local-graph",
 			name: "Focus local graph view",
 			callback: async () => {
