@@ -27,7 +27,7 @@ export default class KeyboardEnhancerPlugin extends Plugin {
 	}
 
 	/**
-	 * Check if an element `e` is a child of another of a `split`.
+	 * Check if an element `e` is a child of another `split`.
 	 */
 	inSplit(e: WorkspaceItem, split: WorkspaceItem): boolean {
 		while (e) {
@@ -71,6 +71,17 @@ export default class KeyboardEnhancerPlugin extends Plugin {
 	async showVimiumMarkers() {
 		await this.app.commands.executeCommandById("vimium:show-markers");
 	}
+
+    /**
+     * Set the active leaf to read mode.
+     */
+    setReadMode() {
+        const activeLeaf = this.app.workspace.activeLeaf;
+        if (!activeLeaf) return;
+        let viewState = activeLeaf.getViewState();
+        viewState.state!.mode = "preview";
+        activeLeaf.setViewState(viewState);
+    }
 
 	/**
 	 * Hide vimium markers.
@@ -134,6 +145,14 @@ export default class KeyboardEnhancerPlugin extends Plugin {
 				);
 			},
 		});
+        // Forces the active leaf to be in preview mode.
+		this.addCommand({
+			id: "set-read-mode",
+			name: "Set read mode",
+			callback: async () => {
+                this.setReadMode();
+			},
+		});
 
 		this.registerDomEvent(window, "keydown", async (event) => {
 			// Do nothing if keyboard enhancer is disabled
@@ -148,6 +167,7 @@ export default class KeyboardEnhancerPlugin extends Plugin {
                     break;
                 case ";":   // Toggle vimium markers.
                     const focusedElem = document.activeElement;
+                    ;const vimMode = app.workspace.activeLeaf.view.editor.cm.cm.state.vim.mode;
                     // Do nothing if focused element is an input or contenteditable
                     if (focusedElem?.tagName.toLowerCase() === "input") return;
                     if (focusedElem?.contentEditable === "true") return;
